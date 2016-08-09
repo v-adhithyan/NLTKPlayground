@@ -1,5 +1,8 @@
 import facebook
 import nltk
+import requests
+from nltk.corpus import names
+import random
 
 def get_access_token():
     """
@@ -15,45 +18,27 @@ def features(name):
     return {'suffix1' : name[-1:],
             'suffix2' : name[-2:],
             'suffix3' : name[-3:]}
-#to hold friends list
-friends_list = []
-test_set = []
+
+
 #create a graph api object using the access token obtained from graph api explorer
 access_token = get_access_token()
 graph = facebook.GraphAPI(access_token=access_token)
 
 #get friend list from facebook
 api_response = graph.get_connections(id='me', connection_name='friends')
-print api_response
 friends = api_response['data'] #get the value of key 'data' which contains json array of friends list
 #friends is a json array of dict objects with name and id as keys of each dict object
 
-#iterate each friends and tag them as male or female
+#train with nltk corpus names
+names = ([(name, 'male') for name in names.words('male.txt')] +
+         [(name, 'female') for name in names.words('female.txt')])
+random.shuffle(names)
+featuresets = [(features(n), g) for (n, g) in names]
 
-train_set = friends[10:] # train first 10 friends in api response
-test_set = friends[:10] # remaining will be automatically classified by classifier
+classifier = nltk.NaiveBayesClassifier.train(featuresets)
 
-genders = []
-genders.append((features("ashwini"), "female"))
-genders.append((features("krithika"), "female"))
-genders.append((features("abinaya"), "female"))
-genders.append((features("valli"), "female"))
-genders.append((features("sindhuja"), "female"))
-genders.append((features("chitra"), "female"))
-
-print "---- Training starts ----"
-for friend in train_set:
+#classify facebook friends gender
+for friend in friends:
     name = friend['name']
-    gender = raw_input("{} is :".format(name))
-    genders.append((features(name), gender))
-
-train_set = genders
-classifier = nltk.NaiveBayesClassifier.train(train_set)
-print "---- Training ends ----"
-
-print "----- Result ----"
-for friend in test_set:
-    name = friend['name']
-    feature = features(name)
-    gender = classifier.classify(feature)
+    gender = classifier.classify(features(name))
     print "{} is {}".format(name, gender)

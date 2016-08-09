@@ -31,3 +31,4 @@ classifier = nltk.NaiveBayesClassifier.train(train_set)
 
 find_review_sentiment("thuppakki.txt")
 find_review_sentiment("kabali.txt")
+find_review_sentiment("vedalam.txt")
